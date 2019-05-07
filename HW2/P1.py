@@ -2,6 +2,8 @@ import numpy as np
 from math import sqrt
 from math import pi
 from math import exp
+import matplotlib.pyplot as plt
+from scipy.stats import norm
 
 
 def generate_samples(sample_size, J):
@@ -12,6 +14,14 @@ def generate_samples(sample_size, J):
     n3_samples = np.random.normal(2.1, sqrt(0.06), size=n_size)
     n4_samples = np.random.normal(3.4, sqrt(0.04), size=n_size)
     n5_samples = np.random.normal(4.0, sqrt(0.01), size=n_size)
+    plt.figure("main pdfs")
+    x_axis = np.arange(0, 5, 0.01)
+    plt.plot(x_axis, 0.2*norm.pdf(x_axis, 0.5, sqrt(0.02)), 'b-')
+    plt.plot(x_axis, 0.2*norm.pdf(x_axis, 1.2, sqrt(0.09)), 'r-')
+    plt.plot(x_axis, 0.2*norm.pdf(x_axis, 2.1, sqrt(0.06)), 'g-')
+    plt.plot(x_axis, 0.2*norm.pdf(x_axis, 3.4, sqrt(0.04)), 'y-')
+    plt.plot(x_axis, 0.2*norm.pdf(x_axis, 4.0, sqrt(0.01)), 'p-')
+    plt.show()
     for i in range(n_size):
         samples[i * 5] = n1_samples[i]
         samples[i * 5 + 1] = n2_samples[i]
@@ -80,7 +90,6 @@ if __name__ == "__main__":
     print("sigma^2: ", sigma2)
     print("pi: ", p)
     print("=========================")
-
     p, mu, sigma2 = expectation_maximization(4, 5000, 200)
     print("I = 4, samples# = 5000")
     print("mu: ", mu)
