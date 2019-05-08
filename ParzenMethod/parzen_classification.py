@@ -16,7 +16,7 @@ def separate_data_by_classes(data, labels, classes):
     return separated_data
 
 
-def classify_parzen(query, data, parzen_window, h):
+def calc_parzen_for_point(query, data, parzen_window, h):
     parzen_sigma = 0
     for sample in data:
         parzen_sigma += parzen_window(query, sample, h)
@@ -36,6 +36,28 @@ def gaussian_parzen_window(query, sample, h):
                                    cov=np.identity(len(query)))
 
 
+def classify_parzen(data, separated_data, parzen_window):
+    classes = np.zeros(len(data))
+    for j, sample in enumerate(data):
+        max_parzen = 0
+        arg_max = -1
+        for i, cluster in enumerate(separated_data):
+            parzen = calc_parzen_for_point(sample, cluster, parzen_window, 1)
+            if parzen > max_parzen:
+                max_parzen = parzen
+                arg_max = i
+        classes[j] = arg_max
+    return classes
+
+
+def calc_accuracy(estimated_classes, labels):
+    correct = 0
+    for label, estimate in zip(estimated_classes, labels):
+        if label == estimate:
+            correct += 1
+    print('accuracy: ' + str(correct / len(labels)))
+
+
 if __name__ == '__main__':
 
     train_data = np.genfromtxt('data/Reduced Fashion-MNIST/Train_Data.csv', delimiter=',')
@@ -43,3 +65,12 @@ if __name__ == '__main__':
 
     labels = np.unique(train_labels)
     separated_data = separate_data_by_classes(train_data, train_labels, labels)
+
+    test_data = np.genfromtxt('data/Reduced Fashion-MNIST/Test_Data.csv', delimiter=',')
+    test_labels = np.genfromtxt('data/Reduced Fashion-MNIST/Test_Labels.csv', delimiter=',')
+
+    estimated_classes = classify_parzen(train_data, separated_data, rectangular_parzen_window)
+    calc_accuracy(estimated_classes, test_labels)
+
+    estimated_classes = classify_parzen(train_data, separated_data, gaussian_parzen_window)
+    calc_accuracy(estimated_classes, test_labels)
