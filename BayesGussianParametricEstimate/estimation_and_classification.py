@@ -83,6 +83,53 @@ def calc_accuracy(estimated_classes, labels):
     print('accuracy: ' + str(correct / len(labels)))
 
 
+def make_risk_coeffs_matrix(labels, landa_for_classes, landa_for_unknown):
+    risk_coeffs = landa_for_classes * np.ones((len(labels)+1, len(labels)))
+    for i in range(len(risk_coeffs)-1):
+        risk_coeffs[i][i] = 0
+    risk_coeffs[len(risk_coeffs)-1] = landa_for_unknown * np.ones(len(labels))
+    return risk_coeffs
+
+
+def calc_risk(data, j, mus, sigmas, priors, risk_coeffs):
+    if j == len(risk_coeffs) - 1:
+        return risk_coeffs[len(risk_coeffs)-1][0]
+    risk = 0
+    for i in range(len(risk_coeffs)-1):
+        risk += risk_coeffs[j][i] * \
+                multivariate_normal.pdf(data, mean=mus[i], cov=sigmas[i]) * priors[i]
+    return risk
+
+
+def classify_with_proper_risk(data, mus, sigmas, priors, labels):
+    risky_labels = list(labels)
+    risky_labels.append(len(labels))
+    risk_coeffs = make_risk_coeffs_matrix(labels, 1, 0.8)
+    classes = np.zeros(len(data))
+    for i, sample in enumerate(data):
+        min_risk = 10
+        arg_min = -1
+        for j, label in enumerate(risky_labels):
+            risk = calc_risk(sample, j, mus, sigmas, priors, risk_coeffs)
+            if risk < min_risk:
+                min_risk = risk
+                arg_min = j
+        classes[i] = arg_min
+    return classes
+
+
+def calc_accuracy_respect_to_risks(estimated_classes, labels):
+    correct = 0
+    for i, label in enumerate(labels):
+        if label == estimated_classes[i]:
+            correct += 1
+    data_size = 0
+    for i in range(len(labels)):
+        if estimated_classes[i] != len(labels):
+            data_size += 1
+    print('accuracy with respect to risks: ' + str(correct / data_size))
+
+
 if __name__ == '__main__':
 
     train_data = np.genfromtxt('data/Reduced Fashion-MNIST/Train_Data.csv', delimiter=',')
@@ -104,7 +151,9 @@ if __name__ == '__main__':
     test_data = normalize_features(test_data)
     test_data = remove_feature(test_data, removed_index)
 
-    estimated_classes = classify_baysian(test_data, mus, sigmas, priors, labels)
-    calc_accuracy(estimated_classes, test_labels)
+    # estimated_classes = classify_baysian(test_data, mus, sigmas, priors, labels)
+    # calc_accuracy(estimated_classes, test_labels)
 
-
+    estimated_classes_respect_to_risks = \
+        classify_with_proper_risk(test_data, mus, sigmas, priors, labels)
+    calc_accuracy_respect_to_risks(estimated_classes_respect_to_risks, test_labels)
