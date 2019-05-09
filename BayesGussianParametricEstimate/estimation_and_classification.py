@@ -135,7 +135,7 @@ def calc_accuracy_respect_to_risks(estimated_classes, labels):
             correct += 1
     data_size = 0
     for i in range(len(labels)):
-        if estimated_classes[i] != len(labels):
+        if estimated_classes[i] != max(labels):
             data_size += 1
     risky_labels = list(labels)
     risky_labels.append(len(labels))
