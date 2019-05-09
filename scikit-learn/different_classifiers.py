@@ -31,3 +31,8 @@ if __name__ == '__main__':
     knn_classifier.fit(train_data, train_labels)
     estimated_classes = knn_classifier.predict(test_data)
     calc_accuracy(estimated_classes, test_labels, 'KNN Classifier with k = 3')
+
+    parzen_classifier = RadiusNeighborsClassifier(radius=8.5)
+    parzen_classifier.fit(train_data, train_labels)
+    estimated_classes = parzen_classifier.predict(test_data)
+    calc_accuracy(estimated_classes, test_labels, 'Parzen Estimator')
