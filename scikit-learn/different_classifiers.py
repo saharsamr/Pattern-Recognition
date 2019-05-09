@@ -1,6 +1,7 @@
 from sklearn.neighbors import KNeighborsClassifier, \
     RadiusNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import confusion_matrix
 import numpy as np
 from numpy import linalg as la
 
@@ -50,15 +51,9 @@ def calc_accuracy(estimated_classes, labels, print_label):
             correct += 1
     print('----------------------------')
     print('accuracy for ' + print_label + ': ' + str(correct / len(labels)))
-    make_confusion_matrix(estimated_classes, labels)
-
-
-def make_confusion_matrix(estimated_calsses, labels):
-    classes = np.unique(labels)
-    confusion_mat = np.zeros((len(classes), len(classes)))
-    for estimate, label in zip(estimated_calsses, labels):
-        confusion_mat[int(estimate)][int(label)] += 1
-    print(confusion_mat)
+    print()
+    print('confusion matrix:')
+    print(confusion_matrix(labels, estimated_classes))
 
 
 if __name__ == '__main__':
