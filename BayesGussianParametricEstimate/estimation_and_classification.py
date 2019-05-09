@@ -75,12 +75,22 @@ def classify_baysian(data, mus, sigmas, priors, labels):
     return classes
 
 
+def make_confusion_matrix(estimated_calsses, labels):
+    classes = np.unique(labels)
+    confusion_mat = np.zeros((len(classes), len(classes)))
+    for estimate, label in zip(estimated_calsses, labels):
+        confusion_mat[int(estimate)][int(label)] += 1
+    print(confusion_mat)
+
+
 def calc_accuracy(estimated_classes, labels):
     correct = 0
     for i, label in enumerate(labels):
         if label == estimated_classes[i]:
             correct += 1
+    print('----------------------------')
     print('accuracy: ' + str(correct / len(labels)))
+    make_confusion_matrix(estimated_classes, labels)
 
 
 def make_risk_coeffs_matrix(labels, landa_for_classes, landa_for_unknown):
@@ -127,7 +137,10 @@ def calc_accuracy_respect_to_risks(estimated_classes, labels):
     for i in range(len(labels)):
         if estimated_classes[i] != len(labels):
             data_size += 1
+    risky_labels = list(labels)
+    risky_labels.append(len(labels))
     print('accuracy with respect to risks: ' + str(correct / data_size))
+    make_confusion_matrix(estimated_classes, risky_labels)
 
 
 if __name__ == '__main__':

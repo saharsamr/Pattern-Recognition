@@ -108,12 +108,22 @@ def classify_knn(queries, data, labels, k):
     return estimated_classes
 
 
+def make_confusion_matrix(estimated_calsses, labels):
+    classes = np.unique(labels)
+    confusion_mat = np.zeros((len(classes), len(classes)))
+    for estimate, label in zip(estimated_calsses, labels):
+        confusion_mat[int(estimate)][int(label)] += 1
+    print(confusion_mat)
+
+
 def calc_accuracy(estimated_classes, labels):
     correct = 0
     for estimate, label in zip(estimated_classes, labels):
         if estimate == label:
             correct += 1
+    print('----------------------------')
     print('accuracy: ' + str(correct / len(labels)))
+    make_confusion_matrix(estimated_classes, labels)
 
 
 if __name__ == "__main__":
