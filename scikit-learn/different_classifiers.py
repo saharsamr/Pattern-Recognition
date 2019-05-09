@@ -4,6 +4,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import confusion_matrix
 import numpy as np
 from numpy import linalg as la
+import time
 
 
 def mu_estimate_ml(data):
@@ -44,13 +45,14 @@ def normalize_features(data):
     return data
 
 
-def calc_accuracy(estimated_classes, labels, print_label):
+def calc_accuracy(estimated_classes, labels, print_label, duration):
     correct = 0
     for estimate, label in zip(estimated_classes, labels):
         if estimate == label:
             correct += 1
     print('----------------------------')
     print('accuracy for ' + print_label + ': ' + str(correct / len(labels)))
+    print('duration: ', duration)
     print()
     print('confusion matrix:')
     print(confusion_matrix(labels, estimated_classes))
@@ -74,16 +76,22 @@ if __name__ == '__main__':
     test_data = remove_feature(test_data, removed_indices)
 
     knn_classifier = KNeighborsClassifier(n_neighbors=3)
+    t1 = time.time()
     knn_classifier.fit(train_data, train_labels)
     estimated_classes = knn_classifier.predict(test_data)
-    calc_accuracy(estimated_classes, test_labels, 'KNN Classifier with k = 3')
+    t2 = time.time()
+    calc_accuracy(estimated_classes, test_labels, 'KNN Classifier with k = 3', t2-t1)
 
     parzen_classifier = RadiusNeighborsClassifier(radius=2.8)
+    t1 = time.time()
     parzen_classifier.fit(train_data, train_labels)
     estimated_classes = parzen_classifier.predict(test_data)
-    calc_accuracy(estimated_classes, test_labels, 'Parzen Estimator')
+    t2 = time.time()
+    calc_accuracy(estimated_classes, test_labels, 'Parzen Estimator', t2-t1)
 
     gnb = GaussianNB()
+    t1 = time.time()
     gnb.fit(train_data, train_labels)
     estimated_calsses = gnb.predict(test_data)
-    calc_accuracy(estimated_calsses, test_labels, 'Gaussian Naive Bayes')
+    t2 = time.time()
+    calc_accuracy(estimated_calsses, test_labels, 'Gaussian Naive Bayes', t2-t1)

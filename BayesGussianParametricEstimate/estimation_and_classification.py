@@ -2,6 +2,7 @@ import numpy as np
 from scipy.stats import multivariate_normal
 from numpy import linalg as la
 import heapq
+import time
 
 
 class ProbAndLabel(object):
@@ -126,7 +127,7 @@ def make_confidence_matrix(estimated_classes, labels, confusion_mat, confs):
     print(confidence_mat)
 
 
-def calc_accuracy(estimated_classes, labels, confs):
+def calc_accuracy(estimated_classes, labels, confs, duration):
     correct = 0
     for i, label in enumerate(labels):
         if label == estimated_classes[i][0]:
@@ -134,6 +135,7 @@ def calc_accuracy(estimated_classes, labels, confs):
     print()
     print('----------------------------')
     print('accuracy: ' + str(correct / len(labels)))
+    print('duration: ', duration)
     confusion_mat = make_confusion_matrix(estimated_classes, labels)
     make_confidence_matrix(estimated_classes, labels, confusion_mat, confs)
 
@@ -200,18 +202,20 @@ if __name__ == '__main__':
 
     train_data, mu, sigma, removed_index = pca(train_data, sigma)
 
-    mus, sigmas = estimate_parameters_for_each_class(train_data, train_labels, labels)
-
     test_data = np.genfromtxt('data/Reduced Fashion-MNIST/Test_Data.csv', delimiter=',')
     test_labels = np.genfromtxt('data/Reduced Fashion-MNIST/Test_Labels.csv', delimiter=',')
 
     test_data = normalize_features(test_data)
     test_data = remove_feature(test_data, removed_index)
 
+    t1 = time.time()
+    mus, sigmas = estimate_parameters_for_each_class(train_data, train_labels, labels)
+
     np.set_printoptions(precision=2)
 
     estimated_classes, confs = classify_baysian(test_data, mus, sigmas, priors, labels)
-    calc_accuracy(estimated_classes, test_labels, confs)
+    t2 = time.time()
+    calc_accuracy(estimated_classes, test_labels, confs, t2-t1)
 
     estimated_classes_respect_to_risks = \
         classify_with_proper_risk(test_data, mus, sigmas, priors, labels)

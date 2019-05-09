@@ -2,6 +2,7 @@ import numpy as np
 from math import sqrt
 import heapq
 from numpy import linalg as la
+import time
 
 
 class LabelAndDistance(object):
@@ -113,16 +114,19 @@ def make_confusion_matrix(estimated_calsses, labels):
     confusion_mat = np.zeros((len(classes), len(classes)))
     for estimate, label in zip(estimated_calsses, labels):
         confusion_mat[int(estimate)][int(label)] += 1
+    print()
     print(confusion_mat)
 
 
-def calc_accuracy(estimated_classes, labels):
+def calc_accuracy(estimated_classes, labels, duration):
     correct = 0
     for estimate, label in zip(estimated_classes, labels):
         if estimate == label:
             correct += 1
+    print()
     print('----------------------------')
     print('accuracy: ' + str(correct / len(labels)))
+    print('duration: ', duration)
     make_confusion_matrix(estimated_classes, labels)
 
 
@@ -136,14 +140,16 @@ if __name__ == "__main__":
     train_data = normalize_features(train_data)
     train_data, removed_indices = pca(normalize_features(train_data), sigma)
 
-    labels = np.unique(train_labels)
-    separated_data = separate_data_by_classes(train_data, train_labels, labels)
-
     test_data = np.genfromtxt('./../data/Reduced Fashion-MNIST/Test_Data.csv', delimiter=',')
     test_labels = np.genfromtxt('./../data/Reduced Fashion-MNIST/Test_Labels.csv', delimiter=',')
 
     test_data = normalize_features(test_data)
     test_data = remove_feature(test_data, removed_indices)
 
+    t1 = time.time()
+    labels = np.unique(train_labels)
+    separated_data = separate_data_by_classes(train_data, train_labels, labels)
+
     estimated_classes = classify_knn(test_data[0:500], train_data, train_labels, 3)
-    calc_accuracy(estimated_classes, test_labels[0:500])
+    t2 = time.time()
+    calc_accuracy(estimated_classes, test_labels[0:500], t2 - t1)

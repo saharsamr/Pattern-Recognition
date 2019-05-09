@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import linalg as la
 from math import sqrt, pi, exp
+import time
 
 
 def mu_estimate_ml(data):
@@ -96,16 +97,19 @@ def make_confusion_matrix(estimated_calsses, labels):
     confusion_mat = np.zeros((len(classes), len(classes)))
     for estimate, label in zip(estimated_calsses, labels):
         confusion_mat[int(estimate)][int(label)] += 1
+    print()
     print(confusion_mat)
 
 
-def calc_accuracy(estimated_classes, labels):
+def calc_accuracy(estimated_classes, labels, duration):
     correct = 0
     for label, estimate in zip(estimated_classes, labels):
         if label == estimate:
             correct += 1
+    print()
     print('----------------------------')
     print('accuracy: ' + str(correct / len(labels)))
+    print('duration: ', duration)
     make_confusion_matrix(estimated_classes, labels)
 
 
@@ -120,17 +124,21 @@ if __name__ == '__main__':
     train_data = normalize_features(train_data)
     train_data, removed_indices = pca(normalize_features(train_data), sigma)
 
-    labels = np.unique(train_labels)
-    separated_data = separate_data_by_classes(train_data, train_labels, labels)
-
     test_data = np.genfromtxt('data/Reduced Fashion-MNIST/Test_Data.csv', delimiter=',')
     test_labels = np.genfromtxt('data/Reduced Fashion-MNIST/Test_Labels.csv', delimiter=',')
 
     test_data = normalize_features(test_data)
     test_data = remove_feature(test_data, removed_indices)
 
-    estimated_classes = classify_parzen(test_data[0:500], separated_data, rectangular_parzen_window)
-    calc_accuracy(estimated_classes, test_labels[0:500])
+    labels = np.unique(train_labels)
+    t1 = time.time()
+    separated_data = separate_data_by_classes(train_data, train_labels, labels)
 
+    estimated_classes = classify_parzen(test_data[0:500], separated_data, rectangular_parzen_window)
+    t2 = time.time()
+    calc_accuracy(estimated_classes, test_labels[0:500], t2-t1)
+
+    t3 = time.time()
     estimated_classes = classify_parzen(test_data[0:500], separated_data, gaussian_parzen_window)
-    calc_accuracy(estimated_classes, test_labels[0:500])
+    t4 = time.time()
+    calc_accuracy(estimated_classes, test_labels[0:500], t4-t3)
