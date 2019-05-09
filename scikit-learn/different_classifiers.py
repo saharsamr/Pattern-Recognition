@@ -51,6 +51,9 @@ def calc_accuracy(estimated_classes, labels, print_label):
     print('accuracy for ' + print_label + ': ' + str(correct / len(labels)))
 
 
+
+
+
 if __name__ == '__main__':
 
     train_data = np.genfromtxt('../data/Reduced Fashion-MNIST/Train_Data.csv', delimiter=',')
@@ -61,22 +64,17 @@ if __name__ == '__main__':
     train_data = normalize_features(train_data)
     test_data = normalize_features(test_data)
 
-    knn_classifier = KNeighborsClassifier(n_neighbors=3)
-    knn_classifier.fit(train_data, train_labels)
-    estimated_classes = knn_classifier.predict(test_data)
-    calc_accuracy(estimated_classes, test_labels, 'KNN Classifier with k = 3')
-
-    parzen_classifier = RadiusNeighborsClassifier(radius=8.5)
-    parzen_classifier.fit(train_data, train_labels)
-    estimated_classes = parzen_classifier.predict(test_data)
-    calc_accuracy(estimated_classes, test_labels, 'Parzen Estimator')
-
     mu = mu_estimate_ml(train_data)
     sigma = sigma_estimate_ml(train_data, mu)
 
     train_data = normalize_features(train_data)
     train_data, removed_indices = pca(normalize_features(train_data), sigma)
     test_data = remove_feature(test_data, removed_indices)
+
+    knn_classifier = KNeighborsClassifier(n_neighbors=3)
+    knn_classifier.fit(train_data, train_labels)
+    estimated_classes = knn_classifier.predict(test_data)
+    calc_accuracy(estimated_classes, test_labels, 'KNN Classifier with k = 3')
 
     parzen_classifier = RadiusNeighborsClassifier(radius=2.8)
     parzen_classifier.fit(train_data, train_labels)
