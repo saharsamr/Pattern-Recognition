@@ -1,5 +1,6 @@
 from sklearn.neighbors import KNeighborsClassifier, \
     RadiusNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
 import numpy as np
 from numpy import linalg as la
 
@@ -81,3 +82,8 @@ if __name__ == '__main__':
     parzen_classifier.fit(train_data, train_labels)
     estimated_classes = parzen_classifier.predict(test_data)
     calc_accuracy(estimated_classes, test_labels, 'Parzen Estimator')
+
+    gnb = GaussianNB()
+    gnb.fit(train_data, train_labels)
+    estimated_calsses = gnb.predict(test_data)
+    calc_accuracy(estimated_calsses, test_labels, 'Gaussian Naive Bayes')
