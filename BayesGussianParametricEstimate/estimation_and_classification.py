@@ -164,8 +164,8 @@ if __name__ == '__main__':
     test_data = normalize_features(test_data)
     test_data = remove_feature(test_data, removed_index)
 
-    # estimated_classes = classify_baysian(test_data, mus, sigmas, priors, labels)
-    # calc_accuracy(estimated_classes, test_labels)
+    estimated_classes = classify_baysian(test_data, mus, sigmas, priors, labels)
+    calc_accuracy(estimated_classes, test_labels)
 
     estimated_classes_respect_to_risks = \
         classify_with_proper_risk(test_data, mus, sigmas, priors, labels)
