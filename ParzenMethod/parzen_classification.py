@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.stats import multivariate_normal
 from numpy import linalg as la
 from math import sqrt, pi, exp
 
@@ -67,13 +66,12 @@ def rectangular_parzen_window(query, sample, h):
     for i, dim in enumerate(sample):
         if abs(query[i] - dim) / h > 0.5:
             return 0
-    return 10 / 6
+    return 1
 
 
 def gaussian_parzen_window(query, sample, h):
     result = 1
     for i, dim in enumerate(sample):
-        # result *= multivariate_normal.pdf((query[i] - dim), mean=0, cov=1)
         result *= (1 / sqrt(2 * pi)) * (exp(-1 * ((query[i] - dim) ** 2) / (2 * h)))
     return result
 
@@ -121,8 +119,8 @@ if __name__ == '__main__':
     test_data = normalize_features(test_data)
     test_data = remove_feature(test_data, removed_indices)
 
-    estimated_classes = classify_parzen(test_data, separated_data, rectangular_parzen_window)
-    calc_accuracy(estimated_classes, test_labels)
+    estimated_classes = classify_parzen(test_data[0:500], separated_data, rectangular_parzen_window)
+    calc_accuracy(estimated_classes, test_labels[0:500])
 
-    estimated_classes = classify_parzen(test_data, separated_data, gaussian_parzen_window)
-    calc_accuracy(estimated_classes, test_labels)
+    estimated_classes = classify_parzen(test_data[0:500], separated_data, gaussian_parzen_window)
+    calc_accuracy(estimated_classes, test_labels[0:500])
