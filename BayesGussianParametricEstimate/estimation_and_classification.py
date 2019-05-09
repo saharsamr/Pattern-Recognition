@@ -1,6 +1,31 @@
 import numpy as np
 from scipy.stats import multivariate_normal
 from numpy import linalg as la
+import heapq
+
+
+class ProbAndLabel(object):
+    def __init__(self, label, prob):
+        self.label = label
+        self.prob = prob
+
+    def __gt__(self, other):
+        return self.prob > other.prob
+
+    def __lt__(self, other):
+        return self.prob < other.prob
+
+    def __eq__(self, other):
+        return self.prob == other.prob
+
+    def __ne__(self, other):
+        return self.prob != other.prob
+
+    def __le__(self, other):
+        return self.prob <= other.prob
+
+    def __ge__(self, other):
+        return self.prob >= other.prob
 
 
 def mu_estimate_ml(data):
@@ -62,35 +87,55 @@ def pca(data, sigma):
 
 
 def classify_baysian(data, mus, sigmas, priors, labels):
-    classes = np.zeros(len(data))
+    classes = np.zeros((len(data), 2))
+    conf = np.zeros((len(data), 2))
     for i, sample in enumerate(data):
-        max_prob = 0
-        arg_max = -1
+        probs = []
         for j, label in enumerate(labels):
-            prob = multivariate_normal.pdf(sample, mean=mus[j], cov=sigmas[j]) * priors[j]
-            if prob > max_prob:
-                max_prob = prob
-                arg_max = j
-        classes[i] = arg_max
-    return classes
+            heapq.heappush(probs, ProbAndLabel(
+                label,
+                multivariate_normal.pdf(sample, mean=mus[j], cov=sigmas[j]) * priors[j])
+                )
+        heapq._heapify_max(probs)
+        x = heapq.nlargest(2, probs)
+        classes[i] = np.array([x[0].label, x[1].label])
+        conf[i] = np.array([x[0].prob, x[1].prob])
+    return classes, conf
 
 
 def make_confusion_matrix(estimated_calsses, labels):
     classes = np.unique(labels)
     confusion_mat = np.zeros((len(classes), len(classes)))
     for estimate, label in zip(estimated_calsses, labels):
-        confusion_mat[int(estimate)][int(label)] += 1
+        confusion_mat[int(estimate[0])][int(label)] += 1
+    print()
+    print('confusion matrix:')
     print(confusion_mat)
+    return confusion_mat
 
 
-def calc_accuracy(estimated_classes, labels):
+def make_confidence_matrix(estimated_classes, labels, confusion_mat, confs):
+    classes = np.unique(labels)
+    confidence_mat = np.zeros((len(classes), len(classes)))
+    for estimate, label, conf in zip(estimated_classes, labels, confs):
+        confidence_mat[int(estimate[0])][int(label)] += \
+            (1 - (conf[1] / conf[0]))
+    confidence_mat = confidence_mat / (confusion_mat + 1)
+    print()
+    print('confidence matrix:')
+    print(confidence_mat)
+
+
+def calc_accuracy(estimated_classes, labels, confs):
     correct = 0
     for i, label in enumerate(labels):
-        if label == estimated_classes[i]:
+        if label == estimated_classes[i][0]:
             correct += 1
+    print()
     print('----------------------------')
     print('accuracy: ' + str(correct / len(labels)))
-    make_confusion_matrix(estimated_classes, labels)
+    confusion_mat = make_confusion_matrix(estimated_classes, labels)
+    make_confidence_matrix(estimated_classes, labels, confusion_mat, confs)
 
 
 def make_risk_coeffs_matrix(labels, landa_for_classes, landa_for_unknown):
@@ -137,10 +182,9 @@ def calc_accuracy_respect_to_risks(estimated_classes, labels):
     for i in range(len(labels)):
         if estimated_classes[i] != max(labels):
             data_size += 1
-    risky_labels = list(labels)
-    risky_labels.append(len(labels))
+    print()
+    print('----------------------------')
     print('accuracy with respect to risks: ' + str(correct / data_size))
-    make_confusion_matrix(estimated_classes, risky_labels)
 
 
 if __name__ == '__main__':
@@ -164,8 +208,10 @@ if __name__ == '__main__':
     test_data = normalize_features(test_data)
     test_data = remove_feature(test_data, removed_index)
 
-    estimated_classes = classify_baysian(test_data, mus, sigmas, priors, labels)
-    calc_accuracy(estimated_classes, test_labels)
+    np.set_printoptions(precision=2)
+
+    estimated_classes, confs = classify_baysian(test_data, mus, sigmas, priors, labels)
+    calc_accuracy(estimated_classes, test_labels, confs)
 
     estimated_classes_respect_to_risks = \
         classify_with_proper_risk(test_data, mus, sigmas, priors, labels)
