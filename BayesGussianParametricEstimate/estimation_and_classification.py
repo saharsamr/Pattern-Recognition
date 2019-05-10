@@ -210,9 +210,13 @@ if __name__ == '__main__':
 
     t1 = time.time()
     mus, sigmas = estimate_parameters_for_each_class(train_data, train_labels, labels)
+    t2 = time.time()
+
+    print('time to learn: ', t2-t1)
 
     np.set_printoptions(precision=2)
 
+    t1 = time.time()
     estimated_classes, confs = classify_baysian(test_data, mus, sigmas, priors, labels)
     t2 = time.time()
     calc_accuracy(estimated_classes, test_labels, confs, t2-t1)

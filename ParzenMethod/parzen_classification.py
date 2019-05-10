@@ -88,7 +88,6 @@ def classify_parzen(data, separated_data, parzen_window):
                 max_parzen = parzen
                 arg_max = i
         classes[j] = arg_max
-        print(max_parzen)
     return classes
 
 
@@ -115,8 +114,8 @@ def calc_accuracy(estimated_classes, labels, duration):
 
 if __name__ == '__main__':
 
-    train_data = np.genfromtxt('data/Reduced Fashion-MNIST/Train_Data.csv', delimiter=',')
-    train_labels = np.genfromtxt('data/Reduced Fashion-MNIST/Train_Labels.csv', delimiter=',')
+    train_data = np.genfromtxt('../data/Reduced Fashion-MNIST/Train_Data.csv', delimiter=',')
+    train_labels = np.genfromtxt('../data/Reduced Fashion-MNIST/Train_Labels.csv', delimiter=',')
 
     mu = mu_estimate_ml(train_data)
     sigma = sigma_estimate_ml(train_data, mu)
@@ -124,8 +123,8 @@ if __name__ == '__main__':
     train_data = normalize_features(train_data)
     train_data, removed_indices = pca(normalize_features(train_data), sigma)
 
-    test_data = np.genfromtxt('data/Reduced Fashion-MNIST/Test_Data.csv', delimiter=',')
-    test_labels = np.genfromtxt('data/Reduced Fashion-MNIST/Test_Labels.csv', delimiter=',')
+    test_data = np.genfromtxt('../data/Reduced Fashion-MNIST/Test_Data.csv', delimiter=',')
+    test_labels = np.genfromtxt('../data/Reduced Fashion-MNIST/Test_Labels.csv', delimiter=',')
 
     test_data = normalize_features(test_data)
     test_data = remove_feature(test_data, removed_indices)

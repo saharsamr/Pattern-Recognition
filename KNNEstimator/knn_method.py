@@ -70,7 +70,6 @@ def knn_for_single_point(query, separated_data, k):
         if estimate > min_knn:
             min_knn = estimate
             estimated_class = i
-    print(estimated_class)
     return estimated_class
 
 

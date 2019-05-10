@@ -87,7 +87,6 @@ def majority_voting(majority):
             frequencies[element] += 1
         else:
             frequencies[element] = 1
-    print(max(frequencies, key=frequencies.get))
     return max(frequencies, key=frequencies.get)
 
 
@@ -150,6 +149,25 @@ if __name__ == "__main__":
     labels = np.unique(train_labels)
     separated_data = separate_data_by_classes(train_data, train_labels, labels)
 
+    print('k = 1')
+    estimated_classes = classify_knn(test_data[0:500], train_data, train_labels, 1)
+    t2 = time.time()
+    calc_accuracy(estimated_classes, test_labels[0:500], t2 - t1)
+
+    print('k = 3')
+    t1 = time.time()
     estimated_classes = classify_knn(test_data[0:500], train_data, train_labels, 3)
+    t2 = time.time()
+    calc_accuracy(estimated_classes, test_labels[0:500], t2 - t1)
+
+    print('k = 5')
+    t1 = time.time()
+    estimated_classes = classify_knn(test_data[0:500], train_data, train_labels, 5)
+    t2 = time.time()
+    calc_accuracy(estimated_classes, test_labels[0:500], t2 - t1)
+
+    print('k = 10')
+    t1 = time.time()
+    estimated_classes = classify_knn(test_data[0:500], train_data, train_labels, 10)
     t2 = time.time()
     calc_accuracy(estimated_classes, test_labels[0:500], t2 - t1)
