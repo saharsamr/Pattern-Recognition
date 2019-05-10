@@ -43,13 +43,18 @@ if __name__ == "__main__":
 
     transform, eigenvalues = pca(train_data, 200)
 
-    train_data = apply_transformation(transform, train_data)
-    test_data = apply_transformation(transform, test_data)
+    reduced_train_data = apply_transformation(transform, train_data)
+    reduced_test_data = apply_transformation(transform, test_data)
+
+    gnb = GaussianNB()
+    gnb.fit(reduced_train_data, train_labels)
+    predicted_labels = gnb.predict(reduced_test_data)
+    print('with PCA: ', accuracy_score(test_labels, predicted_labels))
 
     gnb = GaussianNB()
     gnb.fit(train_data, train_labels)
     predicted_labels = gnb.predict(test_data)
-    print(accuracy_score(test_labels, predicted_labels))
+    print('without PCA: ', accuracy_score(test_labels, predicted_labels))
 
     plt.plot(eigenvalues)
     plt.show()
