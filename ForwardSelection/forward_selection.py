@@ -2,7 +2,7 @@ import numpy as np
 from mnist import MNIST
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
-from ForwardSelection.discrimination_of_features import DiscriminationOfFeatures
+from ForwardSelection.DiscriminationOfFeatures import DiscriminationOfFeatures
 import heapq
 import matplotlib.pyplot as plt
 
