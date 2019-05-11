@@ -1,4 +1,5 @@
 from sklearn.decomposition import PCA
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis as LDA
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
 import numpy as np
@@ -17,8 +18,17 @@ if __name__ == '__main__':
     test_labels = np.array(test_labels)
 
     pca = PCA(n_components=200)
-    train_data = pca.fit_transform(train_data)
-    test_data = pca.transform(test_data)
+    new_train_data = pca.fit_transform(train_data)
+    new_test_data = pca.transform(test_data)
+
+    gnb = GaussianNB()
+    gnb.fit(new_train_data, train_labels)
+    predicted_labels = gnb.predict(new_test_data)
+    print(accuracy_score(test_labels, predicted_labels))
+
+    lda = LDA()
+    train_data = lda.fit_transform(train_data, train_labels)
+    test_data = lda.transform(test_data)
 
     gnb = GaussianNB()
     gnb.fit(train_data, train_labels)
