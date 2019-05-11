@@ -4,6 +4,7 @@ from PCA.pca import pca, apply_transformation
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
 from numpy import linalg as la
+import scipy.linalg.sqrtm as sqrt
 
 
 def mu_estimate(data):
@@ -11,6 +12,10 @@ def mu_estimate(data):
 
 
 def scatter_estimate(data, mu):
+    return (1 / len(data)) * (np.matmul(np.transpose(data - mu), (data - mu)))
+
+
+def sigma_estimate(data, mu):
     return (1 / len(data)) * (np.matmul(np.transpose(data - mu), (data - mu)))
 
 
@@ -23,15 +28,17 @@ def separate_data_by_classes(data, labels, classes):
     return separated_data
 
 
-def whitening_pca(train_data, test_data, n_dims):
-    transform, eigenvalues = pca(train_data, n_dims)
-    train_data = apply_transformation(transform, train_data)
-    print(train_data.shape)
-    print(eigenvalues.shape)
-    eigenvalues = eigenvalues[0:len(train_data[0])]
-    train_data = train_data / eigenvalues
-    test_data = apply_transformation(transform, test_data)
-    test_data = test_data / eigenvalues
+def whithening_data(train_data, test_data):
+    mu = mu_estimate(train_data)
+    sigma = sigma_estimate(train_data, mu)
+    eigenvalues, eigenvectors = la.eig(sigma)
+    sorted_indices = np.argsort(eigenvalues)[::-1]
+    eigenvalues = eigenvalues[sorted_indices]
+    eigenvectors = eigenvectors[sorted_indices]
+    D = np.diag(eigenvalues)
+    whitening_matrix = np.matmul(sqrt(np.linalg.inv(D)), np.transpose(eigenvectors))
+    train_data = apply_transformation(whitening_matrix, train_data)
+    test_data = apply_transformation(whitening_matrix, test_data)
     return train_data, test_data
 
 
@@ -75,7 +82,7 @@ if __name__ == '__main__':
     train_labels = np.array(train_labels)
     test_labels = np.array(test_labels)
 
-    train_data, test_data = whitening_pca(train_data, test_data, 100)
+    train_data, test_data = whithening_data(train_data, test_data, 100)
 
     classes = np.unique(train_labels)
     separated_data = separate_data_by_classes(train_data, train_labels, classes)
