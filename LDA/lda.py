@@ -1,10 +1,9 @@
 import numpy as np
 from mnist import MNIST
-from PCA.pca import pca, apply_transformation
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
 from numpy import linalg as la
-import scipy.linalg.sqrtm as sqrt
+from scipy.linalg import sqrtm as sqrt
 
 
 def mu_estimate(data):
@@ -26,6 +25,13 @@ def separate_data_by_classes(data, labels, classes):
             if label == class_:
                 separated_data[int(class_)].append(sample)
     return separated_data
+
+
+def apply_transformation(transform, data):
+    new_data = np.zeros((len(data), len(transform)))
+    for i, row in enumerate(data):
+        new_data[i] = np.matmul(transform, row)
+    return new_data
 
 
 def whithening_data(train_data, test_data):
