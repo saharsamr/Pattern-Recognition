@@ -41,7 +41,7 @@ if __name__ == "__main__":
     train_labels = np.array(train_labels)
     test_labels = np.array(test_labels)
 
-    transform, eigenvalues = pca(train_data, 200)
+    transform, eigenvalues = pca(train_data, 420)
 
     reduced_train_data = apply_transformation(transform, train_data)
     reduced_test_data = apply_transformation(transform, test_data)
@@ -56,5 +56,7 @@ if __name__ == "__main__":
     predicted_labels = gnb.predict(test_data)
     print('without PCA: ', accuracy_score(test_labels, predicted_labels))
 
+    axes = plt.gca()
+    axes.set_ylim([0, 10000])
     plt.plot(eigenvalues)
     plt.show()

@@ -4,6 +4,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
 from numpy import linalg as la
 from scipy.linalg import sqrtm as sqrt
+import matplotlib.pyplot as plt
 
 
 def mu_estimate(data):
@@ -34,15 +35,18 @@ def apply_transformation(transform, data):
     return new_data
 
 
-def whithening_data(train_data, test_data):
+def whithening_data(train_data, test_data, n_dims):
     mu = mu_estimate(train_data)
     sigma = sigma_estimate(train_data, mu)
     eigenvalues, eigenvectors = la.eig(sigma)
     sorted_indices = np.argsort(eigenvalues)[::-1]
     eigenvalues = eigenvalues[sorted_indices]
+    plt.figure('eigenvalues')
+    plt.plot(eigenvalues)
+    plt.show()
     eigenvectors = eigenvectors[sorted_indices]
     D = np.diag(eigenvalues)
-    whitening_matrix = np.matmul(sqrt(np.linalg.inv(D)), np.transpose(eigenvectors))
+    whitening_matrix = np.matmul(sqrt(np.linalg.inv(D)), np.transpose(eigenvectors))[0:n_dims]
     train_data = apply_transformation(whitening_matrix, train_data)
     test_data = apply_transformation(whitening_matrix, test_data)
     return train_data, test_data
@@ -66,13 +70,24 @@ def calc_between_scatter_matrix(separated_data):
     return s_b
 
 
+def plt_separability_vs_features(eigenvalues):
+    separability = [sum(eigenvalues[0:i+1]) for i in range(len(eigenvalues))]
+    # axes = plt.gca()
+    # axes.set_ylim([-2, 2])
+    plt.figure('separability')
+    plt.plot(separability)
+    plt.show()
+
+
 def lda(separated_data):
     s_w = calc_within_scatter_matrix(separated_data)
     s_b = calc_between_scatter_matrix(separated_data)
     s_p = np.matmul(np.linalg.inv(s_w), s_b)
     eigenvalues, eigenvectors = la.eig(s_p)
     sorted_indices = np.argsort(eigenvalues)[::-1]
+    eigenvalues = eigenvalues[sorted_indices]
     eigenvectors = eigenvectors[sorted_indices]
+    plt_separability_vs_features(eigenvalues)
     rank = min(len(s_w[0]), len(separated_data)-1)
     eigenvectors = eigenvectors[0:rank]
     return eigenvectors
@@ -95,10 +110,15 @@ if __name__ == '__main__':
 
     transform = lda(separated_data)
 
-    train_data = apply_transformation(transform, train_data)
-    test_data = apply_transformation(transform, test_data)
+    new_train_data = apply_transformation(transform, train_data)
+    new_test_data = apply_transformation(transform, test_data)
+
+    gnb = GaussianNB()
+    gnb.fit(new_train_data, train_labels)
+    predicted_labels = gnb.predict(new_test_data)
+    print('accuracy by LDA: ', accuracy_score(test_labels, predicted_labels))
 
     gnb = GaussianNB()
     gnb.fit(train_data, train_labels)
     predicted_labels = gnb.predict(test_data)
-    print('accuracy: ', accuracy_score(test_labels, predicted_labels))
+    print('accuracy without LDA: ', accuracy_score(test_labels, predicted_labels))

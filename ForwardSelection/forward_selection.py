@@ -2,9 +2,31 @@ import numpy as np
 from mnist import MNIST
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
-from ForwardSelection.DiscriminationOfFeatures import DiscriminationOfFeatures
 import heapq
 import matplotlib.pyplot as plt
+
+class DiscriminationOfFeatures(object):
+    def __init__(self, feature_index, discrimination):
+        self.feature_index = feature_index
+        self.discrimination = discrimination
+
+    def __ge__(self, other):
+        return self.discrimination >= other.discrimination
+
+    def __le__(self, other):
+        return self.discrimination <= other.discrimination
+
+    def __ne__(self, other):
+        return self.discrimination != other.discrimination
+
+    def __eq__(self, other):
+        return self.discrimination == other.discrimination
+
+    def __lt__(self, other):
+        return self.discrimination < other.discrimination
+
+    def __gt__(self, other):
+        return self.discrimination > other.discrimination
 
 
 def report_gnb_accuracy(train_data, train_labels, test_data, test_labels):
@@ -69,7 +91,7 @@ if __name__ == '__main__':
     test_labels = np.array(test_labels)
 
     best_features, feature_num_and_ccr = \
-        forward_selection(train_data, train_labels, test_data, test_labels)
+        forward_selection(train_data, train_labels, test_data[0:500], test_labels[0:500])
 
     plt.plot([point[0] for point in feature_num_and_ccr],
              [point[1] for point in feature_num_and_ccr])
