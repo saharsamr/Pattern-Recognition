@@ -10,6 +10,17 @@ def separate_two_classes(c1_indx, c2_indx, classes, data, labels):
     return separated_data, separated_labels
 
 
+def majority_voting(ls):
+    uniques = np.unique(ls)
+    freq = np.zeros(len(uniques))
+    for x in ls:
+        for i, u in enumerate(uniques):
+            if u == x:
+                freq[i] += 1
+                break
+    return np.argmax(freq)
+
+
 def train(data, labels):
     classes = np.unique(labels)
     svms = {}
@@ -21,6 +32,25 @@ def train(data, labels):
     return svms
 
 
+def test(svms, data, labels):
+    classes = np.unique(labels)
+    predictions = [[] for _ in data]
+    for k, sample in enumerate(data):
+        for i in range(len(classes)):
+            for j in range(i+1, len(classes)):
+                predictions[k].append(svms[str(i)+', '+str(j)].predict(sample.reshape(1, -1)))
+    final_predictions = [predictions[i][majority_voting(predictions[i])][0] for i in range(len(data))]
+    return final_predictions
+
+
+def calc_ccr(predictions, labels):
+    correct = 0
+    for prediction, label in zip(predictions, labels):
+        if prediction == label:
+            correct += 1
+    return correct / (len(labels))
+
+
 if __name__ == "__main__":
 
     train_data = np.genfromtxt('../data/Reduced Fashion-MNIST/Train_Data.csv', delimiter=',')
@@ -29,3 +59,7 @@ if __name__ == "__main__":
     test_labels = np.genfromtxt('../data/Reduced Fashion-MNIST/Test_Labels.csv', delimiter=',')
 
     svms = train(train_data, train_labels)
+    predictions = test(svms, train_data, train_labels)
+
+    ccr = calc_ccr(predictions, train_labels)
+    print(ccr)
