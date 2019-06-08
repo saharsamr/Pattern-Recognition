@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn import svm
+from time import time
 
 
 def separate_two_classes(c1_indx, c2_indx, classes, data, labels):
@@ -27,7 +28,7 @@ def train(data, labels):
     for i, c1 in enumerate(classes):
         for j in range(i+1, len(classes)):
             temp_train, temp_labels = separate_two_classes(i, j, classes, data, labels)
-            svms[str(i)+', '+str(j)] = svm.SVC(kernel='poly', degree=4, coef0=1, gamma='scale')
+            svms[str(i)+', '+str(j)] = svm.SVC(kernel='poly', degree=6, coef0=1, gamma='scale')
             svms[str(i) + ', ' + str(j)].fit(temp_train, temp_labels)
     return svms
 
@@ -58,8 +59,11 @@ if __name__ == "__main__":
     test_data = np.genfromtxt('../data/Reduced Fashion-MNIST/Test_Data.csv', delimiter=',')
     test_labels = np.genfromtxt('../data/Reduced Fashion-MNIST/Test_Labels.csv', delimiter=',')
 
+    t1 = time()
     svms = train(train_data, train_labels)
     predictions = test(svms, train_data, train_labels)
+    passed_time = time() - t1
 
     ccr = calc_ccr(predictions, train_labels)
-    print(ccr)
+    print('CCR: ', ccr)
+    print('passed time: ', passed_time)
