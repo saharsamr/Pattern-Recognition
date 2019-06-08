@@ -73,7 +73,7 @@ if __name__ == "__main__":
     fig = plt.figure('transmitted data')
     ax = fig.add_subplot(111, projection='3d')
 
-    new_data = increase_dim(new_data, labels, phi1)
+    new_data = increase_dim(new_data, labels, phi2)
     separated_data = separate_data_by_classes(new_data, labels)
 
     ax.scatter([i[0] for i in separated_data[0]],
