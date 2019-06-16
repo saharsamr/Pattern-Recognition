@@ -145,11 +145,11 @@ class MLPNet(object):
     ds2_ds1 = np.zeros((len(X), *Weight2.shape))
     ds2_db2 = np.zeros((len(X), Weight2.shape[1]))
     ds1_db1 = np.zeros((len(X), Weight1.shape[1]))
-    dL_dw2 = np.zeros(Weight2.shape)
     dL_ds1 = np.zeros((len(X), len(scores[0][0])))
-    dL_dw1 = np.zeros(Weight1.shape)
-    dL_db2 = np.zeros(bias2.shape)
-    dL_db1 = np.zeros(bias1.shape)
+    gradient['W2'] = np.zeros(Weight2.shape)
+    gradient['W1'] = np.zeros(Weight1.shape)
+    gradient['b2'] = np.zeros(bias2.shape)
+    gradient['b1'] = np.zeros(bias1.shape)
         
     dL_ds2 = self.d_L_d_s(scores, y)  
     for i, x in enumerate(X):
@@ -158,14 +158,16 @@ class MLPNet(object):
         ds2_ds1[i] = self.d_s_d_sp(scores[i][0], scores[i][1], Weight2, bias2)
         ds2_db2[i] = self.d_s_d_b(scores[i][1], bias2)
         ds1_db1[i] = self.d_s_d_b(scores[i][0], bias1)
-        dL_dw2 += ds2_dw2[i] * dL_ds2[i]
-    dL_dw2 += Weight2
+        gradient['W2'] += ds2_dw2[i] * dL_ds2[i]
+    gradient['W2'] += Weight2
     for i, x in enumerate(X):
         dL_ds1[i] = np.matmul(dL_ds2[i], np.transpose(ds2_ds1[i]))
-        dL_dw1 += dL_ds1[i] * ds1_dw1[i]
-        dL_db2 += dL_ds2[i] * ds2_db2[i]
-        dL_db1 += dL_ds1[i] * ds1_db1[i]
-    dL_dw1 += Weight1
+        gradient['W1'] += dL_ds1[i] * ds1_dw1[i]
+        gradient['b2'] += dL_ds2[i] * ds2_db2[i]
+        gradient['b1'] += dL_ds1[i] * ds1_db1[i]
+    gradient['W1'] += Weight1
+    
+    
             
     #############################################################################
     pass
