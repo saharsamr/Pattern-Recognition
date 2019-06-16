@@ -34,6 +34,55 @@ class MLPNet(object):
         return x
     return 0
 
+  def softmax(self, X, indx):
+    exp = np.exp(X[indx])
+    return exp / np.sum(np.exp(X))
+
+  def output_coding(self, y):
+    output = np.zeros(self.C)
+    output[int(y)] = 1
+    return output
+
+  def d_L_d_s(self, scores, Y):
+    n = len(Y)
+    grads = np.zeros((len(Y), len(scores[0][1])))
+    for y, score, indx in zip(Y, scores, range(len(Y))):
+        for i, s in enumerate(score[1]):
+            if y == i:
+                grads[indx][i] = -1/n * (1 - self.softmax(score[1], i))
+            else:
+                grads[indx][i] = 1/n * self.softmax(score[1], i)
+    return grads
+
+  def d_s_d_w(self, XP, Weights, biases):
+    grads = np.zeros(Weights.shape)
+    for i, xp in enumerate(XP):
+        for j, w in enumerate(np.transpose(Weights)):
+            if np.sum(XP*w+biases[j]) <= 0:
+                grads[i][j] = 0
+            else:
+                grads[i][j] = xp
+    return grads
+
+  def d_s_d_b(self, X, biases):
+    grads = np.zeros(biases.shape)
+    for i, x in enumerate(X):
+        if x <= 0:
+            grads[i] = 0
+        else:
+            grads[i] = 1
+    return grads
+
+  def d_s_d_sp(self, XP, X, Weights, biases):
+    grads = np.zeros(Weights.shape)
+    for i, xp in enumerate(XP):
+        for j, w in enumerate(np.transpose(Weights)):
+            if np.sum(XP*w+biases[j]) <= 0:
+                grads[i][j] = 0
+            else:
+                grads[i][j] = xp
+    return grads
+
   def loss(self, X, y=None, reg=0.0):
 
     """
@@ -60,11 +109,9 @@ class MLPNet(object):
     scores = [[[0 for i in range(self.H)], [0 for i in range(self.C)]] for sample in X]
     for indx, sample in enumerate(X):
         for i in range(self.H):
-            print(Weight1.shape)
-            scores[indx][0] = np.matmul(X[indx], Weight1)
+            scores[indx][0] = np.matmul(X[indx], Weight1) + bias1
         for i in range(self.C):
-            print(Weight2)
-            scores[indx][1] = np.matmul(scores[indx][0], Weight2)
+            scores[indx][1] = np.matmul(scores[indx][0], Weight2) + bias2
     #############################################################################
     pass
     #############################################################################
@@ -77,7 +124,11 @@ class MLPNet(object):
     # fill loss function.
     loss = None
     ############################################################################# 
-    # loss = data loss + L2 regularization                                      
+    # loss = data loss + L2 regularization  
+    loss = np.zeros(len(X))
+    for x, label, i in zip(X, y, range(len(X))):
+        loss[i] = -1 * np.log(self.softmax(scores[i][1], label)) + 1/2 * (np.sum(Weight1**2) + np.sum(Weight2**2))
+    loss = np.sum(loss)
     #############################################################################
     pass
     #############################################################################
@@ -88,7 +139,34 @@ class MLPNet(object):
     gradient = {}
     #############################################################################
     # store derivation of network's parameters(W and b) in the gradient
-    # as dictionary structure
+    # as dictionary structure    
+    ds2_dw2 = np.zeros((len(X), *Weight2.shape))
+    ds1_dw1 = np.zeros((len(X), *Weight1.shape))
+    ds2_ds1 = np.zeros((len(X), *Weight2.shape))
+    ds2_db2 = np.zeros((len(X), Weight2.shape[1]))
+    ds1_db1 = np.zeros((len(X), Weight1.shape[1]))
+    dL_dw2 = np.zeros(Weight2.shape)
+    dL_ds1 = np.zeros((len(X), len(scores[0][0])))
+    dL_dw1 = np.zeros(Weight1.shape)
+    dL_db2 = np.zeros(bias2.shape)
+    dL_db1 = np.zeros(bias1.shape)
+        
+    dL_ds2 = self.d_L_d_s(scores, y)  
+    for i, x in enumerate(X):
+        ds2_dw2[i] = self.d_s_d_w(scores[i][0], Weight2, bias2)
+        ds1_dw1[i] = self.d_s_d_w(x, Weight1, bias1)
+        ds2_ds1[i] = self.d_s_d_sp(scores[i][0], scores[i][1], Weight2, bias2)
+        ds2_db2[i] = self.d_s_d_b(scores[i][1], bias2)
+        ds1_db1[i] = self.d_s_d_b(scores[i][0], bias1)
+        dL_dw2 += ds2_dw2[i] * dL_ds2[i]
+    dL_dw2 += Weight2
+    for i, x in enumerate(X):
+        dL_ds1[i] = np.matmul(dL_ds2[i], np.transpose(ds2_ds1[i]))
+        dL_dw1 += dL_ds1[i] * ds1_dw1[i]
+        dL_db2 += dL_ds2[i] * ds2_db2[i]
+        dL_db1 += dL_ds1[i] * ds1_db1[i]
+    dL_dw1 += Weight1
+            
     #############################################################################
     pass
     #############################################################################
