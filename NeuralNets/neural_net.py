@@ -28,6 +28,8 @@ class MLPNet(object):
     ############################################
     self.H = H
     self.C = output_size
+    self.gradient = {'W1': np.zeros(self.p_net['W1'].shape), 'W2': np.zeros(self.p_net['W2'].shape), 
+                 'b1': np.zeros(self.p_net['b1'].shape), 'b2': np.zeros(self.p_net['b2'].shape)}
     
   def relu(self, x):
     if x > 0:
@@ -136,7 +138,6 @@ class MLPNet(object):
     #############################################################################
 
     # calculate gradients
-    gradient = {}
     #############################################################################
     # store derivation of network's parameters(W and b) in the gradient
     # as dictionary structure    
@@ -146,10 +147,6 @@ class MLPNet(object):
     ds2_db2 = np.zeros((len(X), Weight2.shape[1]))
     ds1_db1 = np.zeros((len(X), Weight1.shape[1]))
     dL_ds1 = np.zeros((len(X), len(scores[0][0])))
-    gradient['W2'] = np.zeros(Weight2.shape)
-    gradient['W1'] = np.zeros(Weight1.shape)
-    gradient['b2'] = np.zeros(bias2.shape)
-    gradient['b1'] = np.zeros(bias1.shape)
         
     dL_ds2 = self.d_L_d_s(scores, y)  
     for i, x in enumerate(X):
@@ -158,14 +155,14 @@ class MLPNet(object):
         ds2_ds1[i] = self.d_s_d_sp(scores[i][0], scores[i][1], Weight2, bias2)
         ds2_db2[i] = self.d_s_d_b(scores[i][1], bias2)
         ds1_db1[i] = self.d_s_d_b(scores[i][0], bias1)
-        gradient['W2'] += ds2_dw2[i] * dL_ds2[i]
-    gradient['W2'] += Weight2
+        self.gradient['W2'] += ds2_dw2[i] * dL_ds2[i]
+    self.gradient['W2'] += Weight2
     for i, x in enumerate(X):
         dL_ds1[i] = np.matmul(dL_ds2[i], np.transpose(ds2_ds1[i]))
-        gradient['W1'] += dL_ds1[i] * ds1_dw1[i]
-        gradient['b2'] += dL_ds2[i] * ds2_db2[i]
-        gradient['b1'] += dL_ds1[i] * ds1_db1[i]
-    gradient['W1'] += Weight1
+        self.gradient['W1'] += dL_ds1[i] * ds1_dw1[i]
+        self.gradient['b2'] += dL_ds2[i] * ds2_db2[i]
+        self.gradient['b1'] += dL_ds1[i] * ds1_db1[i]
+    self.gradient['W1'] += Weight1
     
     
             
@@ -175,7 +172,7 @@ class MLPNet(object):
     #                              END OF YOUR CODE                             #
     #############################################################################
 
-    return loss, gradient
+    return loss, self.gradient
 
   def train(self, X, y, X_val, y_val,
             alpha=1e-3, alpha_decay=0.95,
@@ -205,42 +202,46 @@ class MLPNet(object):
     val_acc = []
 
     for it in range(num_iters):
-      data_batch = None
-      label_batch = None
-
-      #########################################################################
-      # create a random batch of data and labels for training store 
-      # them into data_batch and label_batch  
-      #########################################################################
-      pass
-      #########################################################################
-      #                             END OF YOUR CODE                          #
-      #########################################################################
-
-      # calculate loss and gradients
-      loss, gradient = self.loss(data_batch, y=label_batch, reg=reg)
-      loss_train.append(loss)
-
-      #########################################################################
-      # update weights and biases which stored in the slef.p_net regarding 
-      # to gradient dictionary.
-      #########################################################################
-      pass
-      #########################################################################
-      #                             END OF YOUR CODE                          #
-      #########################################################################
-
-      if it % 100 == 0:
-        print ('iteration %d / %d: loss %f' % (it, num_iters, loss))
-
-      if it % iteration == 0:
+        data_batch = None
+        label_batch = None
+        
+        #########################################################################
+        # create a random batch of data and labels for
+        indx = np.random.permutation(len(X))
+        data, labels = X[indx], y[indx]
+        data_batch = data[0:batch_size]
+        label_batch = labels[0:batch_size]
+        #########################################################################
+        pass
+        #########################################################################
+        #                             END OF YOUR CODE                          #
+        #########################################################################
+        # calculate loss and gradients
+        loss, gradient = self.loss(data_batch, y=label_batch, reg=reg)
+        loss_train.append(loss)
+        #########################################################################
+        # update weights and biases which stored in the slef.p_net regarding 
+        # to gradient dictionary.
+        self.p_net['W1'] -= alpha * gradient['W1']
+        self.p_net['b1'] -= alpha * gradient['b1']
+        self.p_net['W2'] -= alpha * gradient['W2']
+        self.p_net['b2'] -= alpha * gradient['b2']
+        #########################################################################
+        pass
+        #########################################################################
+        #                             END OF YOUR CODE                          #
+        #########################################################################
+        if it % 100 == 0:
+            print ('iteration %d / %d: loss %f' % (it, num_iters, loss))
+        
+        if it % iteration == 0:
         # Check accuracy
-        train_acc = (self.predict(data_batch) == label_batch).mean()
-        val_acc = (self.predict(X_val) == y_val).mean()
-        train_acc.append(train_acc)
-        val_acc.append(val_acc)
+            train_acc_ = (self.predict(data_batch) == label_batch).mean()
+            val_acc_ = (self.predict(X_val) == y_val).mean()
+            train_acc.append(train_acc_)
+            val_acc.append(val_acc_)
 
-        alpha *= alpha_decay
+            alpha *= alpha_decay
 
     return {
       'loss_train': loss_train,
@@ -256,10 +257,16 @@ class MLPNet(object):
     Returns:
     - y_prediction: array which shows predicted lables
     """
-    y_prediction = None
+    y_prediction = []
 
     ###########################################################################
     # Implement this function. thats VERY easy to do
+    for i, x in enumerate(X):
+        l1 = np.matmul(x, self.p_net['W1']) + self.p_net['b1']
+        l1 = np.array([self.relu(s) for s in l1])
+        l2 = np.matmul(l1, self.p_net['W2']) + self.p_net['b2']
+        l2 = np.array([self.relu(s) for s in l2])
+        y_prediction.append(np.argmax(l2))
     ###########################################################################
     pass
     ###########################################################################
