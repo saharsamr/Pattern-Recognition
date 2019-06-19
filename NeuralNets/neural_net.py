@@ -45,45 +45,37 @@ class MLPNet(object):
     output[int(y)] = 1
     return output
 
-  def d_L_d_s(self, scores, Y):
+  def d_L_d_s(self, scores, Y, key):
     n = len(Y)
-    grads = np.zeros((len(Y), len(scores[0][1])))
     for y, score, indx in zip(Y, scores, range(len(Y))):
         for i, s in enumerate(score[1]):
             if y == i:
-                grads[indx][i] = -1/n * (1 - self.softmax(score[1], i))
+                self.gradient[key][indx][i] = -1/n * (1 - self.softmax(score[1], i))
             else:
-                grads[indx][i] = 1/n * self.softmax(score[1], i)
-    return grads
+                self.gradient[key][indx][i] = 1/n * self.softmax(score[1], i)
 
-  def d_s_d_w(self, XP, Weights, biases):
-    grads = np.zeros(Weights.shape)
+  def d_s_d_w(self, XP, Weights, biases, sample_indx, key):
     for i, xp in enumerate(XP):
         for j, w in enumerate(np.transpose(Weights)):
             if np.sum(XP*w+biases[j]) <= 0:
-                grads[i][j] = 0
+                self.gradient[key][sample_indx][i][j] = 0
             else:
-                grads[i][j] = xp
-    return grads
+                self.gradient[key][sample_indx][i][j] = xp
 
-  def d_s_d_b(self, X, biases):
-    grads = np.zeros(biases.shape)
+  def d_s_d_b(self, X, biases, sample_indx, key):
     for i, x in enumerate(X):
         if x <= 0:
-            grads[i] = 0
+            self.gradient[key][sample_indx][i] = 0
         else:
-            grads[i] = 1
-    return grads
+            self.gradient[key][sample_indx][i] = 1
 
-  def d_s_d_sp(self, XP, X, Weights, biases):
-    grads = np.zeros(Weights.shape)
+  def d_s_d_sp(self, XP, X, Weights, biases, sample_indx, key):
     for i, xp in enumerate(XP):
         for j, w in enumerate(np.transpose(Weights)):
             if np.sum(XP*w+biases[j]) <= 0:
-                grads[i][j] = 0
+                self.gradient[key][sample_indx][i][j] = 0
             else:
-                grads[i][j] = xp
-    return grads
+                self.gradient[key][sample_indx][i][j] = xp
 
   def loss(self, X, y=None, reg=0.0):
 
@@ -141,27 +133,29 @@ class MLPNet(object):
     #############################################################################
     # store derivation of network's parameters(W and b) in the gradient
     # as dictionary structure    
-    ds2_dw2 = np.zeros((len(X), *Weight2.shape))
-    ds1_dw1 = np.zeros((len(X), *Weight1.shape))
-    ds2_ds1 = np.zeros((len(X), *Weight2.shape))
-    ds2_db2 = np.zeros((len(X), Weight2.shape[1]))
-    ds1_db1 = np.zeros((len(X), Weight1.shape[1]))
-    dL_ds1 = np.zeros((len(X), len(scores[0][0])))
+    self.gradient['s2_w2'] = np.zeros((len(X), *Weight2.shape))
+    self.gradient['s1_w1'] = np.zeros((len(X), *Weight1.shape))
+    self.gradient['s2_s1'] = np.zeros((len(X), *Weight2.shape))
+    self.gradient['s2_b2'] = np.zeros((len(X), Weight2.shape[1]))
+    self.gradient['s1_b1'] = np.zeros((len(X), Weight1.shape[1]))
+    self.gradient['L_s1'] = np.zeros((len(X), len(scores[0][0])))
+    self.gradient['L_s2'] = np.zeros((len(X), len(scores[0][1])))
         
-    dL_ds2 = self.d_L_d_s(scores, y)  
+    self.d_L_d_s(scores, y, 'L_s2')  
     for i, x in enumerate(X):
-        ds2_dw2[i] = self.d_s_d_w(scores[i][0], Weight2, bias2)
-        ds1_dw1[i] = self.d_s_d_w(x, Weight1, bias1)
-        ds2_ds1[i] = self.d_s_d_sp(scores[i][0], scores[i][1], Weight2, bias2)
-        ds2_db2[i] = self.d_s_d_b(scores[i][1], bias2)
-        ds1_db1[i] = self.d_s_d_b(scores[i][0], bias1)
-        self.gradient['W2'] += ds2_dw2[i] * dL_ds2[i]
+        print(i)
+        self.d_s_d_w(scores[i][0], Weight2, bias2, i, 's2_w2')
+        self.d_s_d_w(x, Weight1, bias1, i,'s1_w1')
+        self.d_s_d_sp(scores[i][0], scores[i][1], Weight2, bias2, i, 's2_s1')
+        self.d_s_d_b(scores[i][1], bias2, i, 's2_b2')
+        self.d_s_d_b(scores[i][0], bias1, i, 's1_b1')
+        self.gradient['W2'] += self.gradient['s2_w2'][i] * self.gradient['L_s2'][i]
     self.gradient['W2'] += Weight2
     for i, x in enumerate(X):
-        dL_ds1[i] = np.matmul(dL_ds2[i], np.transpose(ds2_ds1[i]))
-        self.gradient['W1'] += dL_ds1[i] * ds1_dw1[i]
-        self.gradient['b2'] += dL_ds2[i] * ds2_db2[i]
-        self.gradient['b1'] += dL_ds1[i] * ds1_db1[i]
+        self.gradient['L_s1'][i] = np.matmul(self.gradient['L_s2'][i], np.transpose(self.gradient['s2_s1'][i]))
+        self.gradient['W1'] += self.gradient['L_s1'][i] * self.gradient['s1_w1'][i]
+        self.gradient['b2'] += self.gradient['L_s2'][i] * self.gradient['s2_b2'][i]
+        self.gradient['b1'] += self.gradient['L_s1'][i] * self.gradient['s1_b1'][i]
     self.gradient['W1'] += Weight1
     
     
@@ -202,6 +196,7 @@ class MLPNet(object):
     val_acc = []
 
     for it in range(num_iters):
+        print('iteration '+str(it))
         data_batch = None
         label_batch = None
         
